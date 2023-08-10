@@ -87,7 +87,53 @@ func (s *server) GetOrdersByTicker(ctx context.Context, req *protogen.TickerRequ
 
 	return &protogen.OrdersResponse{Orders: orders}, nil
 }
+func (s *server) GetOrdersbyAccount(ctx context.Context, req *protogen.AccountRequest) (*protogen.OrdersResponse, error) {
+	collection := s.db.Collection("orders")
+	filter := bson.M{"account": req.GetAccount()}
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
 
+	var orders []*protogen.Order
+	for cursor.Next(ctx) {
+		var mongoOrder MongoOrder
+		if err := cursor.Decode(&mongoOrder); err != nil {
+			return nil, err
+		}
+
+		order := &protogen.Order{
+			Account:       mongoOrder.Account,
+			Action:        mongoOrder.Action,
+			AveragePrice:  mongoOrder.AveragePrice,
+			Fee:           mongoOrder.Fee,
+			IsPrime:       mongoOrder.IsPrime,
+			LimitPrice:    mongoOrder.LimitPrice,
+			MarketTime:    mongoOrder.MarketTime,
+			Notional:      mongoOrder.Notional,
+			OrderId:       mongoOrder.OrderID,
+			OrderType:     mongoOrder.OrderType,
+			Quantity:      mongoOrder.Quantity,
+			QuantityShares:mongoOrder.QuantityShares,
+			QuantityType:  mongoOrder.QuantityType,
+			Status:        mongoOrder.Status,
+			Ticker:        mongoOrder.Ticker,
+			TradingType:   mongoOrder.TradingType,
+			UserId:        mongoOrder.UserID,
+		}
+
+		order.CreatedAt = mongoOrder.CreatedAt.Time().Format(time.RFC3339)
+		order.UpdatedAt = mongoOrder.UpdatedAt.Time().Format(time.RFC3339)
+		orders = append(orders, order)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return &protogen.OrdersResponse{Orders: orders}, nil
+}
 func main() {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {

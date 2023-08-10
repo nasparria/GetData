@@ -4,10 +4,14 @@ package main;
 
 service PortfolioService {
     rpc GetOrdersByTicker(TickerRequest) returns (OrdersResponse);
+    rpc GetOrdersbyAccount(AccountRequest) returns (OrdersResponse);
 }
 
 message TickerRequest {
     string ticker = 1;
+}
+message AccountRequest {
+    string account = 1;
 }
 
 message Order {

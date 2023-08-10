@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PortfolioServiceClient interface {
 	GetOrdersByTicker(ctx context.Context, in *TickerRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
+	GetOrdersbyAccount(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*OrdersResponse, error)
 }
 
 type portfolioServiceClient struct {
@@ -38,11 +39,21 @@ func (c *portfolioServiceClient) GetOrdersByTicker(ctx context.Context, in *Tick
 	return out, nil
 }
 
+func (c *portfolioServiceClient) GetOrdersbyAccount(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*OrdersResponse, error) {
+	out := new(OrdersResponse)
+	err := c.cc.Invoke(ctx, "/main.PortfolioService/GetOrdersbyAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PortfolioServiceServer is the server API for PortfolioService service.
 // All implementations must embed UnimplementedPortfolioServiceServer
 // for forward compatibility
 type PortfolioServiceServer interface {
 	GetOrdersByTicker(context.Context, *TickerRequest) (*OrdersResponse, error)
+	GetOrdersbyAccount(context.Context, *AccountRequest) (*OrdersResponse, error)
 	mustEmbedUnimplementedPortfolioServiceServer()
 }
 
@@ -52,6 +63,9 @@ type UnimplementedPortfolioServiceServer struct {
 
 func (UnimplementedPortfolioServiceServer) GetOrdersByTicker(context.Context, *TickerRequest) (*OrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrdersByTicker not implemented")
+}
+func (UnimplementedPortfolioServiceServer) GetOrdersbyAccount(context.Context, *AccountRequest) (*OrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrdersbyAccount not implemented")
 }
 func (UnimplementedPortfolioServiceServer) mustEmbedUnimplementedPortfolioServiceServer() {}
 
@@ -84,6 +98,24 @@ func _PortfolioService_GetOrdersByTicker_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PortfolioService_GetOrdersbyAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PortfolioServiceServer).GetOrdersbyAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/main.PortfolioService/GetOrdersbyAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PortfolioServiceServer).GetOrdersbyAccount(ctx, req.(*AccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PortfolioService_ServiceDesc is the grpc.ServiceDesc for PortfolioService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -94,6 +126,10 @@ var PortfolioService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrdersByTicker",
 			Handler:    _PortfolioService_GetOrdersByTicker_Handler,
+		},
+		{
+			MethodName: "GetOrdersbyAccount",
+			Handler:    _PortfolioService_GetOrdersbyAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
